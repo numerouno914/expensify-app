@@ -1,4 +1,13 @@
-import { startAddExpense, addExpense, removeExpense, editExpense, setExpenses, startSetExpenses, startRemoveExpense } from '../../actions/expenses';
+import {
+  startAddExpense,
+  addExpense,
+  removeExpense,
+  editExpense,
+  startEditExpense,
+  setExpenses,
+  startSetExpenses,
+  startRemoveExpense
+} from '../../actions/expenses';
 import expenses from '../fixtures/expenses';
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk'; 
@@ -22,6 +31,23 @@ test('should set up remove expense action object', () => {
   });
 });
 
+test('should remove expense from firebase', (done) => {
+  const store = createMockStore({});
+  const expense = expenses[1]
+  store.dispatch(startRemoveExpense({id: expense.id})).then(() => {
+    const actions = store.getActions();
+    expect(actions[0]).toEqual({
+      type: 'REMOVE_EXPENSE',
+      id: expense.id
+    });
+    return database.ref(`expenses/${expense.id}`).once('value');
+  }).then((snapshot) => {
+    expect(snapshot.val()).toBeFalsy();
+    done()
+  });
+
+});
+
 test('should set up edit expense action object',() => {
   const action = editExpense('123abc', {amount: 50.45, note: 'my edited note'});
   expect(action).toEqual({
@@ -31,6 +57,33 @@ test('should set up edit expense action object',() => {
       note: 'my edited note',
       amount: 50.45
     }
+  });
+});
+
+test('should edit expenses from firebase', (done) => {
+  const store = createMockStore({});
+  const id = expenses[0].id;
+  const updates = {
+    description: 'Internet subscription',
+    createdAt: 1000,
+    notes: 'Bill for monthly internet access'
+  };
+  store.dispatch(startEditExpense(id, updates)).then(() => {
+    const actions = store.getActions();
+    expect(actions[0]).toEqual({
+      type: 'EDIT_EXPENSE',
+      id,
+      updates
+    });
+    return database.ref(`expenses/${id}`).once('value');
+  }).then((snapshot) => {
+    const expense = [];
+    expect(snapshot.val()).toEqual({
+      ...expenses[0],
+      id: undefined,
+      ...updates
+    });
+    done();
   });
 });
 
@@ -114,19 +167,3 @@ test('should fetch the expense from firebase', (done) => {
   });
 });
 
-test('should remove expense from firebase', (done) => {
-  const store = createMockStore();
-  const expense = expenses[1]
-  store.dispatch(startRemoveExpense({id: expense.id})).then(() => {
-    const actions = store.getActions();
-    expect(actions[0]).toEqual({
-      type: 'REMOVE_EXPENSE',
-      id: expense.id
-    });
-    return database.ref(`expenses/${expense.id}`).once('value');
-  }).then((snapshot) => {
-    expect(snapshot.val()).toBe(null);
-    done()
-  });
-
-});
