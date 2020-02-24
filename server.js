@@ -15,5 +15,5 @@ app.get('*', (req, res) => {
 
 //to start up production server
 app.listen(port, () => {
-  console.log('server is running on port 3000!');
+  console.log('server is running on port', port);
 });
