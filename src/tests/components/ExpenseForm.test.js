@@ -76,7 +76,7 @@ test('should call onSubmit prop for valid form submission', () => {
   })
 });
 
-//these two tests below not working. the method prop is meant to be run on 1 node. 0 found instead
+
 
 test('should set new date on date change', () => {
   const now = moment();
